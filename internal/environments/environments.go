@@ -89,6 +89,7 @@ func readKeyFromStdin() []byte {
 	if text, err := reader.ReadBytes('\n'); err != nil {
 		panic(err.Error())
 	} else {
+		text = bytes.TrimRight(text, "\r\n")
 		return text
 	}
 }
