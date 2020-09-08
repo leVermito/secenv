@@ -1,0 +1,26 @@
+# Sealed 
+secenv.db {
+  'CLIENT1':{
+    'KEY':"PRIVATE_KEY", 
+    'PUB_KEY':"PUBLIC_KEY", 
+    'DATA': "[]Byte Data"
+  }
+}
+
+# Unsealed
+secenv.db {                   - database
+  'CLIENT1':{                 - environement
+    'KEY':"PRIVATE_KEY",      - key used to encrypt environment
+    'PUB_KEY':"PUBLIC_KEY",   - pub key of key 
+    'DATA': {                 - MAP for variables
+      "VAR1": {               - Variable name is key in map 
+        'TYPE': "ENV",        - How to interact with variable
+        'VALUE': "secret1",   - variable value 
+      },
+      "VAR2": {               - second variable [...]
+        'TYPE': "ENV",
+        'VALUE': "secret2",
+      }
+    }
+  }
+}

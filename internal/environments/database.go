@@ -26,7 +26,7 @@ func getMainDirectoryOrCreateNew() string {
 	return secenvDirectory
 }
 
-func getDatabaseOrCreateNew() map[string]SealedSecretEnvironment {
+func getDatabaseOrCreateNew() map[string]sealedEnvironment {
 	mainDirectory := getMainDirectoryOrCreateNew()
 	databaseFile := mainDirectory + "/secenv.db"
 
@@ -37,15 +37,15 @@ func getDatabaseOrCreateNew() map[string]SealedSecretEnvironment {
 		}
 		defer decodeFile.Close()
 		decoder := gob.NewDecoder(decodeFile)
-		database := make(map[string]SealedSecretEnvironment)
+		database := make(map[string]sealedEnvironment)
 		decoder.Decode(&database)
 		return database
 	}
 
-	return make(map[string]SealedSecretEnvironment, 0)
+	return make(map[string]sealedEnvironment, 0)
 }
 
-func saveDatabase(database map[string]SealedSecretEnvironment) {
+func saveDatabase(database map[string]sealedEnvironment) {
 	mainDirectory := getMainDirectoryOrCreateNew()
 	encodeFile, err := os.Create(mainDirectory + "/secenv.db")
 	if err != nil {

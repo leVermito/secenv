@@ -2,58 +2,75 @@ package environments
 
 import (
 	"bytes"
-	"crypto/rand"
 	"encoding/gob"
 	"github.com/Vermibus/secenv/internal/ciphers"
-	"io"
 )
 
-// secretVariable : containes information about variable itself, its value and category
+// secretVariable : containes information about variable itself, its category and value
 type secretVariable struct {
 	Category string
 	Value    string
 }
 
-// SealedSecretEnvironment : contains nonce and cipherText of secret environment
-type SealedSecretEnvironment struct {
-	Nonce []byte
-	Data  []byte
+// sealedEnvironment :
+type sealedEnvironment struct {
+	privateKey []byte
+	publicKey  []byte
+	data       []byte
 }
 
-// UnsealedSecretEnvironment : containes unencrypted data of secret environment
-type UnsealedSecretEnvironment struct {
-	Data map[string]secretVariable
+type unsealedEnvironment struct {
+	privateKey []byte
+	publicKey  []byte
+	data       map[string]secretVariable
 }
 
-func sealSecretEnviroment(key []byte, secretEnvironment UnsealedSecretEnvironment) SealedSecretEnvironment {
+func encodeEnvironemntData(environmentData map[string]secretVariable) []byte {
 
-	nonce := make([]byte, 12)
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+	var encodedEnvironmentData bytes.Buffer
+	encoder := gob.NewEncoder(&encodedEnvironmentData)
+	if err := encoder.Encode(environmentData); err != nil {
 		panic(err.Error())
 	}
 
-	var encodedSecretVariable bytes.Buffer
-	encoder := gob.NewEncoder(&encodedSecretVariable)
-	if err := encoder.Encode(secretEnvironment.Data); err != nil {
-		panic(err.Error())
-	}
-
-	nonce, encryptedData := ciphers.EncryptAESGCM(key, encodedSecretVariable.Bytes())
-
-	return SealedSecretEnvironment{nonce, encryptedData}
+	return encodedEnvironmentData.Bytes()
 }
 
-func unsealSecretEvironment(key []byte, secretEnvironment SealedSecretEnvironment) UnsealedSecretEnvironment {
+func decodeEnvironmentData(environmentData []byte) map[string]secretVariable {
 
-	decryptedData := ciphers.DecryptAESGCM(secretEnvironment.Nonce, key, secretEnvironment.Data)
+	var decodedEnvironmentData map[string]secretVariable
 
-	var encodedSecretVariable = bytes.NewBuffer(decryptedData)
-	var decodedSecretVariable map[string]secretVariable
-
-	decoder := gob.NewDecoder(encodedSecretVariable)
-	if err := decoder.Decode(&decodedSecretVariable); err != nil {
+	decoder := gob.NewDecoder(bytes.NewBuffer(environmentData))
+	if err := decoder.Decode(&decodedEnvironmentData); err != nil {
 		panic(err.Error())
 	}
 
-	return UnsealedSecretEnvironment{decodedSecretVariable}
+	return decodedEnvironmentData
+}
+
+func sealEnvironment(keyPassword string, environment unsealedEnvironment) sealedEnvironment {
+
+	return sealedEnvironment{
+		environment.privateKey,
+		environment.publicKey,
+		ciphers.EncryptRSA(
+			environment.publicKey,
+			encodeEnvironemntData(environment.data),
+		),
+	}
+}
+
+func unsealEnvironment(keyPassword string, environment sealedEnvironment) unsealedEnvironment {
+
+	return unsealedEnvironment{
+		environment.privateKey,
+		environment.publicKey,
+		decodeEnvironmentData(
+			ciphers.DecryptRSA(
+				keyPassword,
+				environment.privateKey,
+				environment.data,
+			),
+		),
+	}
 }
