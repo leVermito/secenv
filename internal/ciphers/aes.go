@@ -7,16 +7,30 @@ import (
 	"io"
 )
 
-// EncryptAESGCM : encrypt data using AES GCM algorithm with provided key and random nonce
-func EncryptAESGCM(key []byte, data []byte) ([]byte, []byte) {
-
-	block, err := aes.NewCipher(key)
-	if err != nil {
+// GenerateAESKey : Generate 256bits in length AES key
+func GenerateAESKey() []byte {
+	aesKey := make([]byte, 32)
+	if _, err := io.ReadFull(rand.Reader, aesKey); err != nil {
 		panic(err.Error())
 	}
 
+	return aesKey
+}
+
+// GenerateNonce : Generate 96 bits AESGCM nonce
+func GenerateNonce() []byte {
 	nonce := make([]byte, 12)
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		panic(err.Error())
+	}
+	return nonce
+}
+
+// EncryptAESGCM : encrypt data using AES GCM algorithm with provided key and random nonce
+func EncryptAESGCM(key []byte, nonce []byte, data []byte) []byte {
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
 		panic(err.Error())
 	}
 
@@ -27,11 +41,11 @@ func EncryptAESGCM(key []byte, data []byte) ([]byte, []byte) {
 
 	cipherData := aesgcm.Seal(nil, nonce, data, nil)
 
-	return nonce, cipherData
+	return cipherData
 }
 
 // DecryptAESGCM : decrypt data using AES GCM algorithm with provided key and nonce
-func DecryptAESGCM(nonce []byte, key []byte, cipherData []byte) []byte {
+func DecryptAESGCM(key []byte, nonce []byte, cipherData []byte) []byte {
 
 	block, err := aes.NewCipher(key)
 	if err != nil {

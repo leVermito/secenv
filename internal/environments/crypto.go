@@ -3,30 +3,44 @@ package environments
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"github.com/Vermibus/secenv/internal/ciphers"
+	"golang.org/x/crypto/ssh/terminal"
+	"os"
 )
 
-// secretVariable : containes information about variable itself, its category and value
-type secretVariable struct {
+// SecretVariable : containes information about variable itself, its category and value
+type SecretVariable struct {
 	Category string
 	Value    string
 }
 
-// sealedEnvironment :
-type sealedEnvironment struct {
-	privateKey []byte
-	publicKey  []byte
-	data       []byte
+// SealedEnvironment : privateKey, aes, nonce and data are sealed/encrypted
+type SealedEnvironment struct {
+	PrivateKey []byte // sealed
+	Aes        []byte // sealed
+	Nonce      []byte // sealed
+	Data       []byte // sealed
 }
 
-type unsealedEnvironment struct {
-	privateKey []byte
-	publicKey  []byte
-	data       map[string]secretVariable
+// UnsealedEnvironment : privateKey is selaed, data is decrypted and decoded
+type UnsealedEnvironment struct {
+	privateKey []byte                    // sealed
+	data       map[string]SecretVariable // unsealed
 }
 
-func encodeEnvironemntData(environmentData map[string]secretVariable) []byte {
+// ReadKeyFromStdin : reads password from stdin
+func readKeyFromStdin() []byte {
+	fmt.Println("Enter secret environment key: ")
+	keyPassword, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	if err != nil {
+		panic(err.Error())
+	}
 
+	return []byte(keyPassword)
+}
+
+func encodeEnvironemntData(environmentData map[string]SecretVariable) []byte {
 	var encodedEnvironmentData bytes.Buffer
 	encoder := gob.NewEncoder(&encodedEnvironmentData)
 	if err := encoder.Encode(environmentData); err != nil {
@@ -36,10 +50,8 @@ func encodeEnvironemntData(environmentData map[string]secretVariable) []byte {
 	return encodedEnvironmentData.Bytes()
 }
 
-func decodeEnvironmentData(environmentData []byte) map[string]secretVariable {
-
-	var decodedEnvironmentData map[string]secretVariable
-
+func decodeEnvironmentData(environmentData []byte) map[string]SecretVariable {
+	var decodedEnvironmentData map[string]SecretVariable
 	decoder := gob.NewDecoder(bytes.NewBuffer(environmentData))
 	if err := decoder.Decode(&decodedEnvironmentData); err != nil {
 		panic(err.Error())
@@ -48,29 +60,39 @@ func decodeEnvironmentData(environmentData []byte) map[string]secretVariable {
 	return decodedEnvironmentData
 }
 
-func sealEnvironment(keyPassword string, environment unsealedEnvironment) sealedEnvironment {
+func sealEnvironment(keyPassword []byte, environment UnsealedEnvironment) SealedEnvironment {
+	aesKey := ciphers.GenerateAESKey()
+	nonce := ciphers.GenerateNonce()
 
-	return sealedEnvironment{
+	privateKey := ciphers.DecodePrivateKey(
+		ciphers.DecryptEncodedPrivateKey(environment.privateKey, keyPassword),
+	)
+
+	sealedEnvironment := SealedEnvironment{
 		environment.privateKey,
-		environment.publicKey,
-		ciphers.EncryptRSA(
-			environment.publicKey,
-			encodeEnvironemntData(environment.data),
-		),
+		ciphers.EncryptRSA(&privateKey.PublicKey, aesKey),
+		ciphers.EncryptRSA(&privateKey.PublicKey, nonce),
+		ciphers.EncryptAESGCM(aesKey, nonce, encodeEnvironemntData(environment.data)),
 	}
+
+	return sealedEnvironment
 }
 
-func unsealEnvironment(keyPassword string, environment sealedEnvironment) unsealedEnvironment {
+func unsealEnvironment(keyPassword []byte, environment SealedEnvironment) UnsealedEnvironment {
+	privateKey := ciphers.DecodePrivateKey(
+		ciphers.DecryptEncodedPrivateKey(environment.PrivateKey, keyPassword),
+	)
+	aesKey := ciphers.DecryptRSA(privateKey, environment.Aes)
+	nonce := ciphers.DecryptRSA(privateKey, environment.Nonce)
 
-	return unsealedEnvironment{
-		environment.privateKey,
-		environment.publicKey,
-		decodeEnvironmentData(
-			ciphers.DecryptRSA(
-				keyPassword,
-				environment.privateKey,
-				environment.data,
-			),
-		),
+	decodedData := decodeEnvironmentData(
+		ciphers.DecryptAESGCM(aesKey, nonce, environment.Data),
+	)
+
+	unsealedEnvironment := UnsealedEnvironment{
+		environment.PrivateKey,
+		decodedData,
 	}
+
+	return unsealedEnvironment
 }

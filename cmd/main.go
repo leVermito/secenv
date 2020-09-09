@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"github.com/Vermibus/secenv/internal/ciphers"
 	"github.com/Vermibus/secenv/internal/environments"
 	"github.com/urfave/cli/v2"
 	"log"
@@ -10,21 +8,7 @@ import (
 )
 
 func main() {
-	// encryptDecryptTest()
 	console()
-}
-
-func encryptDecryptTest() {
-	data := []byte("secret data")
-	fmt.Printf("Secret: %s\n", data)
-
-	key := []byte("abcdefghijklmnoprstwxyz123456789")
-	nonce, cipherData := ciphers.EncryptAESGCM(key, data)
-
-	fmt.Printf("len of cipherData: %d\n", len(cipherData))
-
-	decryptedData := ciphers.DecryptAESGCM(nonce, key, cipherData)
-	fmt.Printf("decryptedData: %s\n", decryptedData)
 }
 
 func console() {
@@ -33,11 +17,6 @@ func console() {
 		HelpName: "secenv",
 		Usage:    "Not quite insecure secret environments manager.",
 		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:     "env",
-				Usage:    "Name of secret environment to manipulate.",
-				Required: true,
-			},
 			&cli.StringFlag{
 				Name:        "path",
 				Usage:       "Path to secenv directory.",
@@ -49,6 +28,13 @@ func console() {
 			{
 				Name:  "create",
 				Usage: "Create new secret environment.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "env",
+						Usage:    "Name of secret environment to manipulate.",
+						Required: true,
+					},
+				},
 				Action: func(c *cli.Context) error {
 					environments.CreateEnvironment(c.String("env"))
 					return nil
@@ -58,6 +44,11 @@ func console() {
 				Name:  "edit",
 				Usage: "Edit secret environment",
 				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "env",
+						Usage:    "Name of secret environment to manipulate.",
+						Required: true,
+					},
 					&cli.StringFlag{
 						Name:  "add, a",
 						Usage: "Add new variable to secret environment.",
@@ -70,14 +61,49 @@ func console() {
 						Name:  "remove, r",
 						Usage: "Remove variable from secret environment.",
 					},
+					&cli.StringFlag{
+						Name:     "env",
+						Usage:    "Name of secret environment to manipulate.",
+						Required: true,
+					},
 				},
 				Action: func(c *cli.Context) error {
 					return nil
 				},
 			},
 			{
+				Name:  "show",
+				Usage: "List variables in environment.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "env",
+						Usage:    "Name of secret environment to manipulate.",
+						Required: true,
+					},
+				},
+				Action: func(c *cli.Context) error {
+					environments.ShowEnvironment(c.String("env"))
+					return nil
+				},
+			},
+			{
+				Name:  "list",
+				Usage: "List environments.",
+				Action: func(c *cli.Context) error {
+					environments.ListEnvironments()
+					return nil
+				},
+			},
+			{
 				Name:  "remove",
 				Usage: "Remove secret environment.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "env",
+						Usage:    "Name of secret environment to manipulate.",
+						Required: true,
+					},
+				},
 				Action: func(c *cli.Context) error {
 					return nil
 				},
@@ -85,6 +111,13 @@ func console() {
 			{
 				Name:  "inject",
 				Usage: "Inject variables from secret environment to current session.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "env",
+						Usage:    "Name of secret environment to manipulate.",
+						Required: true,
+					},
+				},
 				Action: func(c *cli.Context) error {
 					return nil
 				},
