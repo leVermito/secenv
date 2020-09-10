@@ -1,12 +1,14 @@
 package environments
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/gob"
 	"fmt"
 	"github.com/Vermibus/secenv/internal/ciphers"
 	"golang.org/x/crypto/ssh/terminal"
 	"os"
+	"strings"
 )
 
 // SecretVariable : containes information about variable itself, its category and value
@@ -29,15 +31,25 @@ type UnsealedEnvironment struct {
 	data       map[string]SecretVariable // unsealed
 }
 
-// ReadKeyFromStdin : reads password from stdin
-func readKeyFromStdin() []byte {
-	fmt.Println("Enter secret environment key: ")
-	keyPassword, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+// ReadSecretFromStdin : reads secret from stdin with custom prompt without printing it
+func ReadSecretFromStdin(prompt string) []byte {
+	fmt.Println(prompt)
+	secret, err := terminal.ReadPassword(int(os.Stdin.Fd()))
 	if err != nil {
 		panic(err.Error())
 	}
 
-	return []byte(keyPassword)
+	return secret
+}
+
+// ReadStringFromStdin : reads string from stdin with custom prompt
+func ReadStringFromStdin(prompt string) string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf(prompt)
+	text, _ := reader.ReadString('\n')
+	text = strings.TrimRight(text, "\n\r")
+
+	return text
 }
 
 func encodeEnvironemntData(environmentData map[string]SecretVariable) []byte {

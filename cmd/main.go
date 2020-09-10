@@ -1,6 +1,7 @@
 package main
 
 import (
+	// "fmt"
 	"github.com/Vermibus/secenv/internal/environments"
 	"github.com/urfave/cli/v2"
 	"log"
@@ -16,13 +17,13 @@ func console() {
 		Name:     "secenv",
 		HelpName: "secenv",
 		Usage:    "Not quite insecure secret environments manager.",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:        "path",
-				Usage:       "Path to secenv directory.",
-				DefaultText: "$HOME/.secenv",
-				Required:    false,
-			},
+		Flags:    []cli.Flag{
+			// &cli.StringFlag{
+			// 	Name:        "path",
+			// 	Usage:       "Path to secenv directory.",
+			// 	DefaultText: "$HOME/.secenv",
+			// 	Required:    false,
+			// },
 		},
 		Commands: []*cli.Command{
 			{
@@ -49,26 +50,35 @@ func console() {
 						Usage:    "Name of secret environment to manipulate.",
 						Required: true,
 					},
-					&cli.StringFlag{
-						Name:  "add, a",
-						Usage: "Add new variable to secret environment.",
-					},
-					&cli.StringFlag{
-						Name:  "edit, e",
-						Usage: "Edit variable from secret environment.",
-					},
-					&cli.StringFlag{
-						Name:  "remove, r",
-						Usage: "Remove variable from secret environment.",
-					},
-					&cli.StringFlag{
-						Name:     "env",
-						Usage:    "Name of secret environment to manipulate.",
-						Required: true,
-					},
 				},
-				Action: func(c *cli.Context) error {
-					return nil
+				Subcommands: []*cli.Command{
+					{
+						Name:    "add",
+						Aliases: []string{"a"},
+						Usage:   "Add new variable to secret environment.",
+						Action: func(c *cli.Context) error {
+							environments.AddVariableToEnvironment(c.String("env"))
+							return nil
+						},
+					},
+					{
+						Name:    "edit",
+						Aliases: []string{"e"},
+						Usage:   "Edit variable from secret environment.",
+						Action: func(c *cli.Context) error {
+							environments.EditVariableFromEnvironment(c.String("env"))
+							return nil
+						},
+					},
+					{
+						Name:    "remove",
+						Aliases: []string{"r"},
+						Usage:   "Remove variable from secret environment.",
+						Action: func(c *cli.Context) error {
+							environments.RemoveVariableFromEnvironment(c.String("env"))
+							return nil
+						},
+					},
 				},
 			},
 			{
@@ -80,9 +90,13 @@ func console() {
 						Usage:    "Name of secret environment to manipulate.",
 						Required: true,
 					},
+					&cli.BoolFlag{
+						Name:  "values",
+						Usage: "Print values.",
+					},
 				},
 				Action: func(c *cli.Context) error {
-					environments.ShowEnvironment(c.String("env"))
+					environments.ShowEnvironment(c.String("env"), c.Bool("values"))
 					return nil
 				},
 			},
@@ -105,6 +119,7 @@ func console() {
 					},
 				},
 				Action: func(c *cli.Context) error {
+					environments.RemoveEnvironment(c.String("env"))
 					return nil
 				},
 			},
