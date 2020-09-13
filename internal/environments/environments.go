@@ -3,6 +3,8 @@ package environments
 import (
 	"fmt"
 	"github.com/Vermibus/secenv/internal/ciphers"
+	"os"
+	"strings"
 )
 
 // CreateEnvironment : Creates secret environment
@@ -55,12 +57,8 @@ func ShowEnvironment(environmentName string, showValues bool) {
 		return
 	}
 
-	environment := database[environmentName]
 	keyPassword := ReadSecretFromStdin("Enter secret environment key:")
-	privateKey := ciphers.DecodePrivateKey(ciphers.DecryptEncodedPrivateKey(environment.PrivateKey, keyPassword))
-	aesKey := ciphers.DecryptRSA(privateKey, environment.Aes)
-	nonce := ciphers.DecryptRSA(privateKey, environment.Nonce)
-	data := decodeEnvironmentData(ciphers.DecryptAESGCM(aesKey, nonce, environment.Data))
+	data := DecryptDataFromSealedEnvironment(database[environmentName], keyPassword)
 
 	if showValues {
 		for key := range data {
@@ -95,12 +93,8 @@ func AddVariableToEnvironment(environmentName string) {
 		return
 	}
 
-	environment := database[environmentName]
 	keyPassword := ReadSecretFromStdin("Enter secret environment key:")
-	privateKey := ciphers.DecodePrivateKey(ciphers.DecryptEncodedPrivateKey(environment.PrivateKey, keyPassword))
-	aesKey := ciphers.DecryptRSA(privateKey, environment.Aes)
-	nonce := ciphers.DecryptRSA(privateKey, environment.Nonce)
-	data := decodeEnvironmentData(ciphers.DecryptAESGCM(aesKey, nonce, environment.Data))
+	data := DecryptDataFromSealedEnvironment(database[environmentName], keyPassword)
 
 	variable := ReadStringFromStdin("Enter secret variable name: ")
 
@@ -133,12 +127,8 @@ func EditVariableFromEnvironment(environmentName string) {
 		return
 	}
 
-	environment := database[environmentName]
 	keyPassword := ReadSecretFromStdin("Enter secret environment key:")
-	privateKey := ciphers.DecodePrivateKey(ciphers.DecryptEncodedPrivateKey(environment.PrivateKey, keyPassword))
-	aesKey := ciphers.DecryptRSA(privateKey, environment.Aes)
-	nonce := ciphers.DecryptRSA(privateKey, environment.Nonce)
-	data := decodeEnvironmentData(ciphers.DecryptAESGCM(aesKey, nonce, environment.Data))
+	data := DecryptDataFromSealedEnvironment(database[environmentName], keyPassword)
 
 	variable := ReadStringFromStdin("Enter secret variable name: ")
 
@@ -170,12 +160,9 @@ func RemoveVariableFromEnvironment(environmentName string) {
 	if _, exists := database[environmentName]; !exists {
 		fmt.Printf("Environment %s does not exists!\n", environmentName)
 	}
-	environment := database[environmentName]
+
 	keyPassword := ReadSecretFromStdin("Enter secret environment key:")
-	privateKey := ciphers.DecodePrivateKey(ciphers.DecryptEncodedPrivateKey(environment.PrivateKey, keyPassword))
-	aesKey := ciphers.DecryptRSA(privateKey, environment.Aes)
-	nonce := ciphers.DecryptRSA(privateKey, environment.Nonce)
-	data := decodeEnvironmentData(ciphers.DecryptAESGCM(aesKey, nonce, environment.Data))
+	data := DecryptDataFromSealedEnvironment(database[environmentName], keyPassword)
 
 	variable := ReadStringFromStdin("Enter secret variable name: ")
 
@@ -195,4 +182,39 @@ func RemoveVariableFromEnvironment(environmentName string) {
 
 	database[environmentName] = sealedEnvironment
 	saveDatabase(database)
+}
+
+// InjectVariablesFromEnvironment : Inject variables from environment and spawn subshell with them.
+func InjectVariablesFromEnvironment(environmentName string) {
+	database := getDatabaseOrCreateNew()
+
+	if _, exists := database[environmentName]; !exists {
+		fmt.Printf("Environment %s does not exists!\n", environmentName)
+	}
+
+	keyPassword := ReadSecretFromStdin("Enter secret environment key:")
+	data := DecryptDataFromSealedEnvironment(database[environmentName], keyPassword)
+
+	fmt.Println("Environment variables to be injected:")
+	for key := range data {
+		fmt.Printf("%s\n", key)
+	}
+
+	fmt.Printf("Inject listed variables ? (y/N) ")
+
+	var response string
+	_, err := fmt.Scanln(&response)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" {
+
+		for key := range data {
+			os.Setenv(key, data[key].Value)
+		}
+
+		fmt.Println("Spawning subshell with injected variables.")
+		SpawnShell(environmentName)
+	}
 }

@@ -134,6 +134,7 @@ func console() {
 					},
 				},
 				Action: func(c *cli.Context) error {
+					environments.InjectVariablesFromEnvironment(c.String("env"))
 					return nil
 				},
 			},

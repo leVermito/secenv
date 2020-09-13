@@ -52,6 +52,17 @@ func ReadStringFromStdin(prompt string) string {
 	return text
 }
 
+// DecryptDataFromSealedEnvironment : Decrypts and returns data from sealed environment
+func DecryptDataFromSealedEnvironment(environment SealedEnvironment, keyPassword []byte) map[string]SecretVariable {
+
+	privateKey := ciphers.DecodePrivateKey(ciphers.DecryptEncodedPrivateKey(environment.PrivateKey, keyPassword))
+	aesKey := ciphers.DecryptRSA(privateKey, environment.Aes)
+	nonce := ciphers.DecryptRSA(privateKey, environment.Nonce)
+	data := decodeEnvironmentData(ciphers.DecryptAESGCM(aesKey, nonce, environment.Data))
+
+	return data
+}
+
 func encodeEnvironemntData(environmentData map[string]SecretVariable) []byte {
 	var encodedEnvironmentData bytes.Buffer
 	encoder := gob.NewEncoder(&encodedEnvironmentData)
