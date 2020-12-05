@@ -6,18 +6,17 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/Vermibus/secenv/internal/ciphers"
+	"github.com/Vermibus/secenv/internal/variables"
 	"golang.org/x/crypto/ssh/terminal"
 	"os"
 	"strings"
 )
 
-// SecretVariable : contains information about variable itself, its category and value
-type SecretVariable struct {
-	Category string
-	Value    string
-}
-
-// type SecretVariable
+// // Variable : asdf
+// type Variable struct {
+// 	Category string
+// 	Value    string
+// }
 
 // SealedEnvironment : privateKey, aes, nonce and data are sealed/encrypted
 type SealedEnvironment struct {
@@ -29,8 +28,8 @@ type SealedEnvironment struct {
 
 // UnsealedEnvironment : privateKey is selaed, data is decrypted and decoded
 type UnsealedEnvironment struct {
-	privateKey []byte                    // sealed
-	data       map[string]SecretVariable // unsealed
+	privateKey []byte                        // sealed
+	data       map[string]variables.Variable // unsealed
 }
 
 // ReadSecretFromStdin : reads secret from stdin with custom prompt without printing it
@@ -55,7 +54,7 @@ func ReadStringFromStdin(prompt string) string {
 }
 
 // DecryptDataFromSealedEnvironment : Decrypts and returns data from sealed environment
-func DecryptDataFromSealedEnvironment(environment SealedEnvironment, keyPassword []byte) map[string]SecretVariable {
+func DecryptDataFromSealedEnvironment(environment SealedEnvironment, keyPassword []byte) map[string]variables.Variable {
 
 	privateKey := ciphers.DecodePrivateKey(ciphers.DecryptEncodedPrivateKey(environment.PrivateKey, keyPassword))
 	aesKey := ciphers.DecryptRSA(privateKey, environment.Aes)
@@ -65,7 +64,7 @@ func DecryptDataFromSealedEnvironment(environment SealedEnvironment, keyPassword
 	return data
 }
 
-func encodeEnvironemntData(environmentData map[string]SecretVariable) []byte {
+func encodeEnvironemntData(environmentData map[string]variables.Variable) []byte {
 	var encodedEnvironmentData bytes.Buffer
 	encoder := gob.NewEncoder(&encodedEnvironmentData)
 	if err := encoder.Encode(environmentData); err != nil {
@@ -75,8 +74,8 @@ func encodeEnvironemntData(environmentData map[string]SecretVariable) []byte {
 	return encodedEnvironmentData.Bytes()
 }
 
-func decodeEnvironmentData(environmentData []byte) map[string]SecretVariable {
-	var decodedEnvironmentData map[string]SecretVariable
+func decodeEnvironmentData(environmentData []byte) map[string]variables.Variable {
+	var decodedEnvironmentData map[string]variables.Variable
 	decoder := gob.NewDecoder(bytes.NewBuffer(environmentData))
 	if err := decoder.Decode(&decodedEnvironmentData); err != nil {
 		panic(err.Error())

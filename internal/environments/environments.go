@@ -3,7 +3,9 @@ package environments
 import (
 	"fmt"
 	"github.com/Vermibus/secenv/internal/ciphers"
+	"github.com/Vermibus/secenv/internal/variables"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -29,8 +31,8 @@ func CreateEnvironment(environmentName string) {
 		keyPassword,
 		UnsealedEnvironment{
 			encryptedPrivateKey,
-			map[string]SecretVariable{
-				"SECENV": SecretVariable{"ENV", environmentName},
+			map[string]variables.Variable{
+				"SECENV": variables.EnvironmentVariable{variables.ENVIRONMENT, "ENV", environmentName},
 			},
 		},
 	)
@@ -62,7 +64,7 @@ func ShowEnvironment(environmentName string, showValues bool) {
 
 	if showValues {
 		for key := range data {
-			fmt.Printf("%s: %s\n", key, data[key].Value)
+			fmt.Printf("%s: %s\n", key, data[key].GetName())
 		}
 	} else {
 		for key := range data {
@@ -96,16 +98,32 @@ func AddVariableToEnvironment(environmentName string) {
 	keyPassword := ReadSecretFromStdin("Enter secret environment key:")
 	data := DecryptDataFromSealedEnvironment(database[environmentName], keyPassword)
 
-	// variableType := ReadStringFromStdin("Enter variable type: ")
-	variable := ReadStringFromStdin("Enter secret variable name: ")
+	// Print available types
 
-	if _, exists := data[variable]; exists {
-		fmt.Printf("Variable: %s already exists!\n", variable)
-		return
+	input := ReadStringFromStdin("Enter variable type: ")
+	i, err := strconv.Atoi(input)
+	if err != nil {
+		panic(err.Error())
 	}
 
-	value := ReadSecretFromStdin("Enter secret variable value:")
-	data[variable] = SecretVariable{"ENV", string(value)}
+	variableType := variables.VariableType(i)
+
+	switch variableType {
+	case variables.ENVIRONMENT:
+		variable
+	default:
+		panic("Unrecognized variableType")
+	}
+
+	// variable := ReadStringFromStdin("Enter secret variable name: ")
+
+	// if _, exists := data[variable]; exists {
+	// 	fmt.Printf("Variable: %s already exists!\n", variable)
+	// 	return
+	// }
+
+	// value := ReadSecretFromStdin("Enter secret variable value:")
+	// data[variable] = SecretVariable{"ENV", string(value)}
 
 	sealedEnvironment := sealEnvironment(
 		keyPassword,
@@ -216,6 +234,6 @@ func InjectVariablesFromEnvironment(environmentName string) {
 		}
 
 		fmt.Println("Spawning subshell with injected variables.")
-		SpawnShell(environmentName)
+		SpawnShell()
 	}
 }

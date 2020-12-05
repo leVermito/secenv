@@ -5,18 +5,18 @@ import (
 	"os/exec"
 )
 
-// getShell : returns default system shell, if $SHELL is not set returns "/bin/sh"
+// getShell : returns default system shell, if $SHELL is not set returns "/bin/bash"
 func getShell() string {
 	shell := os.Getenv("SHELL")
 	if shell == "" {
-		shell = "/bin/sh"
+		shell = "/bin/bash"
 	}
 
 	return shell
 }
 
 // SpawnShell : Spawns default system shell with injected variables
-func SpawnShell(environmentName string) {
+func SpawnShell() {
 
 	shell := getShell()
 
