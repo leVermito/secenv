@@ -13,18 +13,11 @@ func Start() {
 		Name:     "secenv",
 		HelpName: "secenv",
 		Usage:    "Not quite insecure secret environments manager.",
-		Flags:    []cli.Flag{
-			// &cli.StringFlag{
-			// 	Name:        "path",
-			// 	Usage:       "Path to secenv directory.",
-			// 	DefaultText: "$HOME/.secenv",
-			// 	Required:    false,
-			// },
-		},
 		Commands: []*cli.Command{
 			{
-				Name:  "create",
-				Usage: "Create new secret environment.",
+				Name:    "create",
+				Aliases: []string{"c"},
+				Usage:   "Create new secret environment.",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:     "env",
@@ -38,48 +31,9 @@ func Start() {
 				},
 			},
 			{
-				Name:  "edit",
-				Usage: "Edit secret environment",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:     "env",
-						Usage:    "Name of secret environment to manipulate.",
-						Required: true,
-					},
-				},
-				Subcommands: []*cli.Command{
-					{
-						Name:    "add",
-						Aliases: []string{"a"},
-						Usage:   "Add new variable to secret environment.",
-						Action: func(c *cli.Context) error {
-							environments.AddVariableToEnvironment(c.String("env"))
-							return nil
-						},
-					},
-					{
-						Name:    "edit",
-						Aliases: []string{"e"},
-						Usage:   "Edit variable from secret environment.",
-						Action: func(c *cli.Context) error {
-							environments.EditVariableFromEnvironment(c.String("env"))
-							return nil
-						},
-					},
-					{
-						Name:    "remove",
-						Aliases: []string{"r"},
-						Usage:   "Remove variable from secret environment.",
-						Action: func(c *cli.Context) error {
-							environments.RemoveVariableFromEnvironment(c.String("env"))
-							return nil
-						},
-					},
-				},
-			},
-			{
-				Name:  "show",
-				Usage: "List variables in environment.",
+				Name:    "show",
+				Aliases: []string{"s"},
+				Usage:   "List variables in environment.",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:     "env",
@@ -97,16 +51,18 @@ func Start() {
 				},
 			},
 			{
-				Name:  "list",
-				Usage: "List environments.",
+				Name:    "list",
+				Aliases: []string{"l"},
+				Usage:   "List environments.",
 				Action: func(c *cli.Context) error {
 					environments.ListEnvironments()
 					return nil
 				},
 			},
 			{
-				Name:  "remove",
-				Usage: "Remove secret environment.",
+				Name:    "remove",
+				Aliases: []string{"r"},
+				Usage:   "Remove secret environment.",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:     "env",
@@ -120,8 +76,9 @@ func Start() {
 				},
 			},
 			{
-				Name:  "inject",
-				Usage: "Inject variables from secret environment to current session.",
+				Name:    "inject",
+				Aliases: []string{"i"},
+				Usage:   "Inject variables from secret environment to current session.",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:     "env",
@@ -131,6 +88,54 @@ func Start() {
 				},
 				Action: func(c *cli.Context) error {
 					environments.InjectVariablesFromEnvironment(c.String("env"))
+					return nil
+				},
+			},
+			{
+				Name:    "add",
+				Aliases: []string{"a"},
+				Usage:   "Add variable to secret environment.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "env",
+						Usage:    "Name of secret environment to manipulate.",
+						Required: true,
+					},
+				},
+				Action: func(c *cli.Context) error {
+					environments.AddVariableToEnvironment(c.String("env"))
+					return nil
+				},
+			},
+			{
+				Name:    "edit",
+				Aliases: []string{"e"},
+				Usage:   "Edit variable from secret environment.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "env",
+						Usage:    "Name of secret environment to manipulate.",
+						Required: true,
+					},
+				},
+				Action: func(c *cli.Context) error {
+					environments.EditVariableFromEnvironment(c.String("env"))
+					return nil
+				},
+			},
+			{
+				Name:    "delete",
+				Aliases: []string{"d"},
+				Usage:   "Delete variable from secret environment.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "env",
+						Usage:    "Name of secret environment to manipulate.",
+						Required: true,
+					},
+				},
+				Action: func(c *cli.Context) error {
+					environments.RemoveVariableFromEnvironment(c.String("env"))
 					return nil
 				},
 			},
