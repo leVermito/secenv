@@ -96,6 +96,7 @@ func AddVariableToEnvironment(environmentName string) {
 	keyPassword := ReadSecretFromStdin("Enter secret environment key:")
 	data := DecryptDataFromSealedEnvironment(database[environmentName], keyPassword)
 
+	// variableType := ReadStringFromStdin("Enter variable type: ")
 	variable := ReadStringFromStdin("Enter secret variable name: ")
 
 	if _, exists := data[variable]; exists {

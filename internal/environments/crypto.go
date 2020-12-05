@@ -11,11 +11,13 @@ import (
 	"strings"
 )
 
-// SecretVariable : containes information about variable itself, its category and value
+// SecretVariable : contains information about variable itself, its category and value
 type SecretVariable struct {
 	Category string
 	Value    string
 }
+
+// type SecretVariable
 
 // SealedEnvironment : privateKey, aes, nonce and data are sealed/encrypted
 type SealedEnvironment struct {

@@ -1,18 +1,14 @@
-package main
+package console
 
 import (
-	// "fmt"
 	"github.com/Vermibus/secenv/internal/environments"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 )
 
-func main() {
-	console()
-}
-
-func console() {
+// Start : start command line parser
+func Start() {
 	app := &cli.App{
 		Name:     "secenv",
 		HelpName: "secenv",

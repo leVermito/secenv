@@ -3,8 +3,7 @@ steps:
   containerRun:
     image: golang:1.15-buster
     script: |
-      cd cmd
       go get -d -v ./...
       go build
-      ./cmd --help
+      ./secenv --help
 
